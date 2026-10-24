@@ -1,12 +1,18 @@
--- Calendario continuo desde el primer alta de cliente hasta la fecha de
--- referencia. Permite mostrar días, semanas y meses sin actividad (con 0)
--- en lugar de que desaparezcan de los informes.
+-- Calendario continuo desde el primer alta de cliente hasta el último dato
+-- disponible (o la fecha de referencia, si es posterior). Permite mostrar días,
+-- semanas y meses sin actividad (con 0) en lugar de que desaparezcan.
+-- No se recorta en la fecha de referencia: con una as_of_date pasada, las
+-- órdenes posteriores se quedarían sin fecha en el calendario. Las consultas
+-- ya acotan su rango a la fecha de referencia.
 
 with bounds as (
 
     select
-        cast(min(created_at) as date)       as start_date,
-        cast({{ as_of_timestamp() }} as date) as end_date
+        cast(min(created_at) as date) as start_date,
+        cast(greatest(
+            {{ as_of_timestamp() }},
+            (select max(last_event_at) from {{ ref('int_orders__lifecycle') }})
+        ) as date)                    as end_date
     from {{ ref('stg_ecommerce__customers') }}
 
 ),

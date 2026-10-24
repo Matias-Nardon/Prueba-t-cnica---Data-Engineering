@@ -369,7 +369,7 @@ KPI principal: ingreso de las ventas que no se han devuelto (3,67 M). Se publica
 | **Sin paquetes externos** de dbt (`dbt_utils`) | La instalación es solo `pip install`; el único test que hacía falta (`is_positive`) es propio. |
 | `profiles.yml` **dentro del repositorio** | No depende de la configuración de `~/.dbt` de cada máquina; no contiene credenciales. |
 | Punto de entrada en **Python** (`run.py`) con la API de dbt | Un único comando, códigos de salida claros y fácil de envolver en un orquestador. |
-| `dim_customers` **marca** (`is_registered`) en lugar de filtrar | Al filtrar, con una `as_of_date` pasada quedaban 673 órdenes huérfanas; lo detectó el test de relaciones. |
+| Las dimensiones **no se recortan** por la fecha de referencia | Con una `as_of_date` pasada, filtrar `dim_customers` dejaba 673 órdenes huérfanas y recortar `dim_date` dejaba 2.320 sin fecha; los detectaron los tests de relaciones. `dim_customers` marca `is_registered` y el calendario llega hasta el último dato; las consultas acotan el rango. |
 
 ---
 
