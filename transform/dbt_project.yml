@@ -1,0 +1,23 @@
+name: ecommerce
+version: "1.0.0"
+profile: ecommerce
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+
+clean-targets:
+  - target
+  - logs
+
+flags:
+  send_anonymous_usage_stats: false
+
+models:
+  ecommerce:
+    # Todo se materializa como tabla: el volumen es pequeño y así el
+    # warehouse queda autocontenido (no depende de tener raw adjuntado).
+    staging:
+      +schema: staging
+      +materialized: table

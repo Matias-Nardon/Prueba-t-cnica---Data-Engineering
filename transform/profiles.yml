@@ -1,0 +1,16 @@
+# El perfil vive dentro del repositorio para no depender de ~/.dbt.
+# run.py define RAW_PATH y WAREHOUSE_PATH con rutas absolutas; los valores por
+# defecto sirven para ejecutar dbt a mano desde la carpeta transform/.
+ecommerce:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Base de datos de salida: se regenera en cada ejecución.
+      path: "{{ env_var('WAREHOUSE_PATH', '../data/warehouse.duckdb') }}"
+      # Origen adjuntado en solo lectura: raw nunca se modifica.
+      attach:
+        - path: "{{ env_var('RAW_PATH', '../data/ecommerce.duckdb') }}"
+          alias: ecommerce
+          read_only: true
+      threads: 4
