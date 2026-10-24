@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: int_orders__lifecycle
+    description: Una fila por orden con la fecha de cada hito y el estado final.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: created_at
+        description: Evento created o, si falta, el primer evento de la orden.
+        data_tests: [not_null]
+      - name: final_status
+        description: Estado del último evento de la orden.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [created, paid, shipped, delivered, cancelled, returned]
+      - name: is_closed
+        description: La orden está en un estado terminal (delivered, returned o cancelled).
+
+  - name: int_order_items__priced
+    description: Líneas de orden con su importe (cantidad × precio de lista actual).
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: line_amount
+        data_tests: [is_positive]

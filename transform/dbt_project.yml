@@ -14,10 +14,25 @@ clean-targets:
 flags:
   send_anonymous_usage_stats: false
 
+vars:
+  # Fecha de referencia de las métricas. Si no se informa, se usa el corte de
+  # los datos (max _extracted_at), no la fecha de ejecución: así el resultado
+  # es reproducible. Ejemplo: dbt build --vars '{as_of_date: "2026-06-30"}'
+  as_of_date: null
+  # Días sin compra a partir de los cuales un cliente deja de ser activo.
+  active_customer_window_days: 30
+
 models:
   ecommerce:
-    # Todo se materializa como tabla: el volumen es pequeño y así el
+    # staging y marts se materializan como tabla: el volumen es pequeño y así el
     # warehouse queda autocontenido (no depende de tener raw adjuntado).
     staging:
       +schema: staging
+      +materialized: table
+    # intermediate son pasos de cálculo que no consume nadie fuera del modelo.
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
       +materialized: table
