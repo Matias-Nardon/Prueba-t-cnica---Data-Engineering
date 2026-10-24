@@ -1,0 +1,103 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >
+      Una fila por cliente con su actividad a la fecha de referencia. Responde
+      a cuántos clientes hay (is_registered), cuántos están activos y (con
+      signup_month) cómo crece la base.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: signup_month
+        description: Mes de alta en la plataforma; base del crecimiento mensual.
+        data_tests: [not_null]
+      - name: has_ordered
+        description: Ha hecho al menos una orden (de cualquier estado).
+      - name: is_registered
+        description: >
+          El cliente ya se había dado de alta en as_of_at. Con la fecha por
+          defecto (corte de los datos) es verdadero para todos.
+        data_tests: [not_null]
+      - name: is_active
+        description: >
+          Tiene al menos una orden no cancelada creada en los últimos
+          active_customer_window_days días (30 por defecto) antes de as_of_at.
+        data_tests: [not_null]
+      - name: as_of_at
+        description: Fecha de referencia con la que se calculó la actividad.
+
+  - name: dim_products
+    description: Catálogo de productos con su precio de lista actual.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests: [not_null]
+
+  - name: dim_date
+    description: Calendario diario continuo con semana ISO y mes.
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+      - name: week_start_date
+        description: Lunes de la semana ISO.
+
+  - name: fct_orders
+    description: >
+      Una fila por orden con fechas de cada hito, estado final, importe e
+      indicadores de negocio. Responde a ventas, ingresos y proporción de
+      órdenes entregadas y canceladas.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: paid_date
+        description: Fecha de pago; es la fecha de la venta y del ingreso.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: status_group
+        description: Estado final agrupado; las órdenes no terminales son in_progress.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, returned, cancelled, in_progress]
+      - name: is_sale
+        description: Venta = orden pagada y no cancelada después.
+      - name: is_net_revenue
+        description: Venta que además no se ha devuelto; cuenta para el ingreso neto.
+      - name: gross_amount
+        description: Suma de cantidad × precio de lista de sus líneas (USD).
+      - name: net_revenue_amount
+        description: gross_amount si is_net_revenue; 0 en otro caso (USD).
+      - name: is_missing_items
+        description: Indicador de calidad. La orden no tiene líneas en la fuente.
+
+  - name: fct_order_items
+    description: Una fila por línea de orden, con categoría e importe; abre el ingreso por categoría.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+      - name: net_revenue_amount
+        description: line_amount si la orden cuenta para el ingreso neto; 0 en otro caso.
