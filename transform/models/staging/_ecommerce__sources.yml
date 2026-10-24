@@ -1,0 +1,51 @@
+version: 2
+
+sources:
+  - name: ecommerce
+    description: >
+      Extracción de los sistemas operativos del e-commerce, tal como llega al
+      data lake. Se adjunta en solo lectura (ver profiles.yml).
+    database: ecommerce
+    schema: raw
+    tables:
+      - name: customers
+        description: Clientes registrados. Snapshot completo en cada extracción.
+        columns:
+          - name: customer_id
+            data_tests: [not_null]
+          - name: _extracted_at
+            description: Momento en que se tomó la información de la fuente.
+
+      - name: products
+        description: Catálogo de productos con su precio de lista actual. Snapshot completo.
+        columns:
+          - name: product_id
+            data_tests: [not_null]
+          - name: _extracted_at
+            description: Momento en que se tomó la información de la fuente.
+
+      - name: orders
+        description: >
+          Eventos del ciclo de vida de cada orden (append). Puede contener
+          reentregas del mismo evento con distinto _ingested_at.
+        columns:
+          - name: order_id
+            data_tests: [not_null]
+          - name: status
+            data_tests: [not_null]
+          - name: event_at
+            data_tests: [not_null]
+          - name: _ingested_at
+            description: Momento en que el registro llegó al data lake.
+
+      - name: order_items
+        description: >
+          Productos y cantidades de cada orden (append). Puede contener
+          reentregas de la misma línea. No incluye precio.
+        columns:
+          - name: order_id
+            data_tests: [not_null]
+          - name: line_number
+            data_tests: [not_null]
+          - name: _ingested_at
+            description: Momento en que el registro llegó al data lake.

@@ -1,0 +1,95 @@
+version: 2
+
+models:
+  - name: stg_ecommerce__customers
+    description: Clientes limpios, una fila por cliente.
+    columns:
+      - name: customer_id
+        description: Identificador del cliente (clave primaria).
+        data_tests: [unique, not_null]
+      - name: email
+        description: Email normalizado a minúsculas y sin espacios.
+        data_tests: [unique, not_null]
+      - name: country_code
+        description: País ISO 3166-1 alfa-2.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [AR, CL, CO, ES, MX, PE, UY]
+      - name: segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [retail, wholesale]
+      - name: created_at
+        description: Fecha de alta del cliente en la plataforma.
+        data_tests: [not_null]
+
+  - name: stg_ecommerce__products
+    description: Catálogo limpio, una fila por producto con su precio de lista actual.
+    columns:
+      - name: product_id
+        description: Identificador del producto (clave primaria).
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [beauty, books, electronics, home, sports]
+      - name: unit_price
+        description: Precio de lista vigente en la extracción. No hay histórico.
+        data_tests: [is_positive]
+      - name: currency
+        description: Todo el catálogo está en USD; si llegara otra moneda, el test avisa.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [USD]
+
+  - name: stg_ecommerce__order_events
+    description: Eventos del ciclo de vida de las órdenes, sin reentregas.
+    columns:
+      - name: order_event_id
+        description: Clave sustituta de (order_id, status, event_at).
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests: [not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_ecommerce__customers')
+                field: customer_id
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [created, paid, shipped, delivered, cancelled, returned]
+      - name: event_at
+        description: Momento en que ocurrió el evento en el sistema operativo.
+        data_tests: [not_null]
+
+  - name: stg_ecommerce__order_items
+    description: Líneas de orden, sin reentregas.
+    columns:
+      - name: order_item_id
+        description: Clave sustituta de (order_id, line_number).
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_ecommerce__order_events')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_ecommerce__products')
+                field: product_id
+      - name: quantity
+        data_tests: [is_positive]
