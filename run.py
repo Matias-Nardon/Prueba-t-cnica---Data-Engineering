@@ -2,6 +2,7 @@
 
 Construye el modelo de datos a partir de raw (dbt build: modelos + tests) y,
 a continuación, ejecuta las consultas de negocio de queries/ sobre el warehouse.
+Cada resultado se imprime y se exporta a output/<consulta>.csv.
 
 Uso:
     python run.py                  # proceso completo
@@ -27,6 +28,7 @@ RAW_PATH = ROOT / "data" / "ecommerce.duckdb"
 WAREHOUSE_PATH = ROOT / "data" / "warehouse.duckdb"
 DBT_DIR = ROOT / "transform"
 QUERIES_DIR = ROOT / "queries"
+OUTPUT_DIR = ROOT / "output"
 
 log = logging.getLogger("pipeline")
 
@@ -52,22 +54,41 @@ def build_model(select: str | None) -> bool:
 
 
 def run_queries() -> None:
-    """Ejecuta cada consulta de queries/ e imprime el resultado."""
+    """Ejecuta cada consulta de queries/, imprime el resultado y lo exporta a CSV."""
     query_files = sorted(QUERIES_DIR.glob("*.sql"))
     if not query_files:
         log.info("No hay consultas en %s", QUERIES_DIR)
         return
 
-    with duckdb.connect(str(WAREHOUSE_PATH), read_only=True) as con:
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+    # Sin read_only: dbt-duckdb deja abierta su conexión al warehouse en este
+    # mismo proceso y DuckDB no admite abrir el archivo con otra configuración.
+    # Las consultas son solo SELECT; raw sigue protegido (adjunto en solo lectura).
+    with duckdb.connect(str(WAREHOUSE_PATH)) as con:
         for path in query_files:
+            result = con.sql(path.read_text(encoding="utf-8"))
             print(f"\n=== {path.stem} ===")
-            con.sql(path.read_text(encoding="utf-8")).show(max_rows=60)
+            result.show(max_rows=60)
+            result.write_csv(str(OUTPUT_DIR / f"{path.stem}.csv"))
+
+    log.info("Resultados exportados a %s", OUTPUT_DIR)
+
+
+def setup_logging() -> None:
+    # Handler propio: dbt configura el logging raíz al importarse y un
+    # basicConfig no tendría efecto.
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    log.addHandler(handler)
+    log.setLevel(logging.INFO)
+    log.propagate = False
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     # La consola de Windows no siempre usa UTF-8 y las tablas de DuckDB llevan caracteres de caja.
     sys.stdout.reconfigure(encoding="utf-8")
+    setup_logging()
     args = parse_args()
 
     if not RAW_PATH.exists():

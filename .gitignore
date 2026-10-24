@@ -9,6 +9,9 @@ data/warehouse.duckdb
 data/*.wal
 *.duckdb.wal
 
+# Resultados de las consultas (se regeneran en cada ejecución)
+output/
+
 # Artefactos de dbt
 transform/target/
 transform/dbt_packages/
