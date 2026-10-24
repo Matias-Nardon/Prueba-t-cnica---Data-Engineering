@@ -1,0 +1,23 @@
+# Entorno virtual de Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Modelo generado por el proceso (se regenera en cada ejecución)
+data/warehouse.duckdb
+data/*.wal
+*.duckdb.wal
+
+# Artefactos de dbt
+transform/target/
+transform/dbt_packages/
+transform/logs/
+logs/
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.env
