@@ -62,8 +62,8 @@ Puente de ingresos ([`05_ingresos_totales`](queries/05_ingresos_totales.sql)):
 **1. Clonar el repositorio**
 
 ```bash
-git clone https://github.com/Matias-Nardon/Prueba-t-cnica---Data-Engineering.git
-cd Prueba-t-cnica---Data-Engineering
+git clone https://github.com/Matias-Nardon/prueba-tecnica-data-engineering.git
+cd prueba-tecnica-data-engineering
 ```
 
 **2. Crear y activar un entorno virtual**
